@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hangman Game | CodeAlpha</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --correct: #10b981;
+      --wrong: #ef4444;
+      --rope-color: #f59e0b;
+      --figure-color: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e1b4b, var(--bg-color));
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .title-group h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a5b4fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-group p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .btn-new-game {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-new-game:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 28px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 680px) {
+      .game-area {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+    }
+
+    .gallows-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px;
+    }
+
+    svg {
+      width: 210px;
+      height: 230px;
+    }
+
+    .svg-gallows {
+      stroke: #cbd5e1;
+      stroke-width: 5;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    .svg-rope {
+      stroke: var(--rope-color);
+      stroke-width: 3.5;
+      stroke-dasharray: 4, 3;
+      fill: none;
+    }
+
+    .svg-part {
+      stroke: var(--figure-color);
+      stroke-width: 4.5;
+      stroke-linecap: round;
+      fill: none;
+      display: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .svg-head {
+      fill: rgba(244, 63, 94, 0.15);
+    }
+
+    .status-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .stat-badge span {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .stat-badge.lives span {
+      color: #fb7185;
+    }
+
+    .word-display {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+
+    .letter-slot {
+      width: 46px;
+      height: 56px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid #475569;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent);
+      transition: all 0.25s ease;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .letter-slot.revealed {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+
+    .letter-slot.missed {
+      border-color: var(--wrong);
+      color: var(--wrong);
+    }
+
+    .message-banner {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      background: rgba(15, 23, 42, 0.8);
+      border-left: 4px solid var(--primary);
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+    }
+
+    .message-banner.won {
+      border-left-color: var(--correct);
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+    }
+
+    .message-banner.lost {
+      border-left-color: var(--wrong);
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .keyboard-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .key-btn {
+      width: 40px;
+      height: 44px;
+      background: #334155;
+      color: var(--text-main);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .key-btn:hover:not(:disabled) {
+      background: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .key-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .key-btn.correct {
+      background: var(--correct) !important;
+      color: white;
+      opacity: 1;
+    }
+
+    .key-btn.wrong {
+      background: #475569 !important;
+      opacity: 0.35;
+      text-decoration: line-through;
+    }
+
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .instructions {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-group">
+        <h1>Hangman Game</h1>
+        <p>A classic word-guessing challenge in Python</p>
+      </div>
+      <button class="btn-new-game" id="newGameBtn">↻ New Game</button>
+    </header>
+
+    <div class="game-area">
+      <div class="gallows-box">
+        <svg viewBox="0 0 200 220" aria-label="Hangman visual depiction">
+          <line x1="20" y1="210" x2="160" y2="210" class="svg-gallows" />
+          <line x1="50" y1="210" x2="50" y2="20" class="svg-gallows" />
+          <line x1="50" y1="20" x2="135" y2="20" class="svg-gallows" />
+          <line x1="50" y1="55" x2="85" y2="20" class="svg-gallows" />
+          <line x1="135" y1="20" x2="135" y2="55" class="svg-rope" />
+
+          <circle id="part-1" cx="135" cy="72" r="16" class="svg-part svg-head" />
+          <line id="part-2" x1="135" y1="88" x2="135" y2="140" class="svg-part" />
+          <line id="part-3" x1="135" y1="102" x2="110" y2="124" class="svg-part" />
+          <line id="part-4" x1="135" y1="102" x2="160" y2="124" class="svg-part" />
+          <line id="part-5" x1="135" y1="140" x2="115" y2="182" class="svg-part" />
+          <line id="part-6" x1="135" y1="140" x2="155" y2="182" class="svg-part" />
+        </svg>
+      </div>
+
+      <div class="status-panel">
+        <div class="stats-row">
+          <div class="stat-badge lives">
+            Guesses Left: <span id="remainingGuesses">6</span> / 6
+          </div>
+          <div class="stat-badge">
+            Word Length: <span id="wordLength">-</span>
+          </div>
+          <div class="stat-badge">
+            Mistakes: <span id="mistakesCount">0</span>
+          </div>
+        </div>
+
+        <div class="word-display" id="wordDisplay"></div>
+
+        <div class="message-banner" id="messageBanner">
+          Game started! Guess a letter using your keyboard or the buttons below.
+        </div>
+      </div>
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <footer>
+      <span>Predefined words: python, code, alpha, hangman, script</span>
+      <div class="instructions">💡 Tip: You can also use your physical computer keyboard to guess letters!</div>
+    </footer>
+  </div>
+
+  <script>
+    const keyboardLayout = [
+      ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+      ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+      ["z", "x", "c", "v", "b", "n", "m"]
+    ];
+
+    let gameState = null;
+
+    function renderKeyboard() {
+      const container = document.getElementById("keyboard");
+      container.innerHTML = "";
+
+      keyboardLayout.forEach(row => {
+        const rowDiv = document.createElement("div");
+        rowDiv.className = "keyboard-row";
+
+        row.forEach(letter => {
+          const btn = document.createElement("button");
+          btn.className = "key-btn";
+          btn.textContent = letter;
+          btn.id = `key-${letter}`;
+          btn.addEventListener("click", () => handleGuess(letter));
+          rowDiv.appendChild(btn);
+        });
+
+        container.appendChild(rowDiv);
+      });
+    }
+
+    function updateHangmanSvg(incorrectCount) {
+      for (let i = 1; i <= 6; i++) {
+        const el = document.getElementById(`part-${i}`);
+        if (el) {
+          el.style.display = i <= incorrectCount ? "block" : "none";
+        }
+      }
+    }
+
+    function renderState(state) {
+      gameState = state;
+
+      document.getElementById("remainingGuesses").textContent = state.remaining_guesses;
+      document.getElementById("mistakesCount").textContent = state.incorrect_guesses;
+      document.getElementById("wordLength").textContent = state.secret_word_length;
+
+      updateHangmanSvg(state.incorrect_guesses);
+
+      const wordContainer = document.getElementById("wordDisplay");
+      wordContainer.innerHTML = "";
+      state.word_display.forEach((char) => {
+        const slot = document.createElement("div");
+        slot.className = "letter-slot";
+        if (char !== "_") {
+          slot.classList.add("revealed");
+          slot.textContent = char;
+        } else {
+          slot.textContent = "";
+        }
+        wordContainer.appendChild(slot);
+      });
+
+      const banner = document.getElementById("messageBanner");
+      banner.textContent = state.message;
+      banner.className = "message-banner";
+      if (state.status === "won") banner.classList.add("won");
+      if (state.status === "lost") banner.classList.add("lost");
+
+      const isGameOver = state.status !== "playing";
+      keyboardLayout.flat().forEach(letter => {
+        const btn = document.getElementById(`key-${letter}`);
+        if (!btn) return;
+
+        btn.className = "key-btn";
+        btn.disabled = isGameOver;
+
+        if (state.correct_letters.includes(letter)) {
+          btn.classList.add("correct");
+          btn.disabled = true;
+        } else if (state.wrong_letters.includes(letter)) {
+          btn.classList.add("wrong");
+          btn.disabled = true;
+        }
+      });
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch("/api/state");
+        const data = await res.json();
+        renderState(data);
+      } catch (err) {
+        console.error("Failed to fetch state:", err);
+      }
+    }
+
+    async function handleGuess(letter) {
+      if (!gameState || gameState.status !== "playing") return;
+      if (gameState.guessed_letters.includes(letter)) return;
+
+      try {
+        const res = await fetch("/api/guess", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ letter })
+        });
+        const data = await res.json();
+        renderState(data);
+      } catch (err) {
+        console.error("Failed to submit guess:", err);
+      }
+    }
+
+    async function resetGame() {
+      try {
+        const res = await fetch("/api/new-game", { method: "POST" });
+        const data = await res.json();
+        renderState(data);
+      } catch (err) {
+        console.error("Failed to reset game:", err);
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const key = e.key.toLowerCase();
+      if (/^[a-z]$/.test(key)) {
+        handleGuess(key);
+      }
+    });
+
+    document.getElementById("newGameBtn").addEventListener("click", resetGame);
+
+    renderKeyboard();
+    fetchState();
+  </script>
+</body>
+</html>
